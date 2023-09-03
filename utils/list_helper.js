@@ -23,21 +23,56 @@ const favouriteBlog = (blogs) => {
   }
 }
 
-// TODO: Fix this
-const mostBlogs11 = (blogs) => {
-  let authors = {}
-  for (let i = 0; i < blogs.length; i++) {
-    if (!Object.keys(authors).includes(blogs[i].author)) {
-      authors[blogs[i].author] = 1
-    } else {
-      authors[blogs[i].author] += 1
+const mostBlogs = (blogs) => {
+  if (!blogs === undefined || !blogs.length == 0) {
+      let authors = {}
+    for (let i = 0; i < blogs.length; i++) {
+      if (!Object.keys(authors).includes(blogs[i].author)) {
+        authors[blogs[i].author] = 1
+      } else {
+        authors[blogs[i].author] += 1
+      }
+    }
+    let max = Object.entries(authors).reduce((max, author) => max[1] > author[1] ? max : author)
+    return {
+      author : max[0],
+      blogs : max[1]
+    }
+  } else {
+    return {
+      author: '',
+      blogs: 0
     }
   }
-  return authors
+}
+
+const mostLikes = (blogs) => {
+  if (!blogs === undefined || !blogs.length == 0) {
+    let authors = {}
+    for (let i = 0; i < blogs.length; i++) {
+      if (!Object.keys(authors).includes(blogs[i].author)) {
+        authors[blogs[i].author] = blogs[i].likes
+      } else {
+        authors[blogs[i].author] += blogs[i].likes
+      }
+    }
+    let max = Object.entries(authors).reduce((max, author) => max[1] > author[1] ? max : author)
+    return {
+      author : max[0],
+      likes : max[1]
+    }
+  } else {
+    return {
+      author: '',
+      likes: 0
+    }
+  }
 }
 
 module.exports = {
   dummy,
   totalLikes,
-  favouriteBlog
+  favouriteBlog,
+  mostBlogs,
+  mostLikes
 }
