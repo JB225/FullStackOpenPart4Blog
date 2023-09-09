@@ -1,15 +1,105 @@
 const mongoose = require('mongoose')
+const helper = require('./blog_api_test_helper')
 const supertest = require('supertest')
 const app = require('../app')
-
 const api = supertest(app)
+const Blog = require('../models/blog')
 
-// TODO: Fix this - check the test database is properly initialised and call is being made properly
-// It seems to work fine with manual testing
-test('blogs are returned as json', async () => {
-    await api.get('/api/blogs')
-    .expect(200)
-    .expect('Content-Type', /application\/json/)
+
+beforeEach( async() => {
+    await Blog.deleteMany({})
+
+    let blogObject = new Blog(helper.initialBlogs[0])
+    await blogObject.save()
+
+    blogObject = new Blog(helper.initialBlogs[1])
+    await blogObject.save()
+})
+
+describe('retrieve blogs from database', () => {
+    test('blogs are returned as json', async () => {
+        await api.get('/api/blogs')
+        .expect(200)
+        .expect('Content-Type', /application\/json/)
+    }, 100000)
+
+    test('all blogs are returned', async() => {
+        const response = await api.get('/api/blogs')
+        expect(response.body).toHaveLength(helper.initialBlogs.length)
+    })
+
+    test('all blogs have a field named id', async() => {
+        const response = await api.get('/api/blogs')
+        expect(response.body[0].id).toBeDefined()
+        expect(response.body[1].id).toBeDefined()
+    })
+})
+
+describe('add new blogs to the database', () => {
+    test('a valid blog can be added', async() => {
+        const newBlog = {
+            title: 'Test 3',
+            author: 'Test Author 3',
+            url: 'wwww.testblog3.com',
+            likes: 10
+        }
+
+        await api
+            .post('/api/blogs')
+            .send(newBlog)
+            .expect(201)
+            .expect('Content-Type', /application\/json/)
+
+        const blogsAtEnd = await helper.blogsInDb()
+        expect(blogsAtEnd).toHaveLength(helper.initialBlogs.length + 1)
+
+        const titles = blogsAtEnd.map(n => n.title)
+        expect(titles).toContain('Test 3')    
+    })
+
+    test('a note created with out the likes property defaults to having zero likes', async() => {
+        const newBlog = {
+            title: 'Test 3',
+            author: 'Test Author 3',
+            url: 'wwww.testblog3.com'
+        }
+
+        await api
+        .post('/api/blogs')
+        .send(newBlog)
+        .expect(201)
+        .expect('Content-Type', /application\/json/)
+
+        const blogsAtEnd = await helper.blogsInDb()
+        const blogWithoutLikes =  blogsAtEnd.filter(blog => {return blog.title === 'Test 3'})
+        expect(blogWithoutLikes[0].likes).toBe(0)    
+    })
+
+    test('a note created without a title returns status code 400 bad request', async() => {
+        const newBlog = {
+            author: 'Test Author 3',
+            url: 'wwww.testblog3.com',
+            likes: 10
+        }
+
+        await api
+        .post('/api/blogs')
+        .send(newBlog)
+        .expect(400)
+    })
+
+    test('a note created without a url returns status code 400 bad request', async() => {
+        const newBlog = {
+            title: 'Test 3',
+            author: 'Test Author 3',
+            likes: 10
+        }
+
+        await api
+        .post('/api/blogs')
+        .send(newBlog)
+        .expect(400)
+    })
 })
 
 afterAll(async () => {
