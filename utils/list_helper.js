@@ -1,4 +1,4 @@
-const dummy = (blogs) => {
+const dummy = () => {
   return 1
 }
 
@@ -7,7 +7,7 @@ const totalLikes = (blogs) => {
 }
 
 const favouriteBlog = (blogs) => {
-  if (!blogs === undefined || !blogs.length == 0) {
+  if (!(blogs === undefined) && !(blogs.length === 0)) {
     let max = blogs.reduce((max, blog) => max.likes > blog.likes ? max : blog)
     return {
       title: max.title,
@@ -24,8 +24,8 @@ const favouriteBlog = (blogs) => {
 }
 
 const mostBlogs = (blogs) => {
-  if (!blogs === undefined || !blogs.length == 0) {
-      let authors = {}
+  if (!(blogs === undefined) && !(blogs.length === 0)) {
+    let authors = {}
     for (let i = 0; i < blogs.length; i++) {
       if (!Object.keys(authors).includes(blogs[i].author)) {
         authors[blogs[i].author] = 1
@@ -47,7 +47,7 @@ const mostBlogs = (blogs) => {
 }
 
 const mostLikes = (blogs) => {
-  if (!blogs === undefined || !blogs.length == 0) {
+  if (!(blogs === undefined) && !(blogs.length === 0)) {
     let authors = {}
     for (let i = 0; i < blogs.length; i++) {
       if (!Object.keys(authors).includes(blogs[i].author)) {
