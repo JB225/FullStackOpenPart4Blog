@@ -8,6 +8,14 @@ usersRouter.post('/', async (request, response) => {
   const saltRounds = 10
   const passwordHash = await bcrypt.hash(password, saltRounds)
 
+  if (!password) {
+    response.status(400).json({ error: 'You must provide a password to create a new user' })
+  }
+
+  if (password.length < 3) {
+    response.status(400).json({ error: 'You password must contain at least 3 characters' })
+  }
+
   const user = new User({
     username,
     name,

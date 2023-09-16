@@ -8,11 +8,24 @@ const requestLogger = (request, response, next) => {
   next()
 }
 
+const errorHandler = (error, request, response, next) => {
+  logger.error(error.message)
+
+  if (error.name === 'MongoServerError' && error.code === 11000) {
+    return response.status(400).json({ error: 'The given username is not unique.' })
+  } else if (error.name === 'ValidationError') {
+    return response.status(400).json({ error: error.message })
+  }
+
+  next(error)
+}
+
 const unknownEndpoint = (request, response) => {
   response.status(404).send({ error: 'unknown endpoint' })
 }
 
 module.exports = {
   requestLogger,
+  errorHandler,
   unknownEndpoint
 }
