@@ -170,7 +170,7 @@ describe('test methods related to users', () => {
   })
 
   test('create new user works with a unique username', async() => {
-    const usersAtStart = await helper.usersInDb
+    const usersAtStart = await helper.usersInDb()
 
     const newUser = {
       username: 'Testy',
@@ -184,12 +184,91 @@ describe('test methods related to users', () => {
       .expect(201)
       .expect('Content-Type', /application\/json/)
 
-    const usersAtEnd = await helper.usersInDb
+    const usersAtEnd = await helper.usersInDb()
     expect(usersAtEnd).toHaveLength(usersAtStart.length + 1)
 
     const usernames = usersAtEnd.map(u => u.username)
     expect(usernames).toContain(newUser.username)
   })
+
+  test('create new user with name already in database returns 400 error code', async() => {
+    const newUser = {
+      username: 'root',
+      name: 'Testy McTestface',
+      password: 'supersecurepassword'
+    }
+
+    const response = await api
+      .post('/api/users')
+      .send(newUser)
+      .expect(400)
+      .expect('Content-Type', /application\/json/)
+
+    expect(response.body.error).toBe('The given username is not unique.')
+  })
+
+  test('create new user with password less than three characters in database returns 400 error code', async() => {
+    const newUser = {
+      username: 'Testy3',
+      name: 'Testy McTestface',
+      password: 'aa'
+    }
+
+    const response = await api
+      .post('/api/users')
+      .send(newUser)
+      .expect(400)
+      .expect('Content-Type', /application\/json/)
+
+    expect(response.body.error).toBe('You password must contain at least 3 characters')
+  })
+
+  test('create new user with username less than three characters in database returns 400 error code', async() => {
+    const newUser = {
+      username: '12',
+      name: 'Testy McTestface',
+      password: 'asfddfshdfh'
+    }
+
+    const response = await api
+      .post('/api/users')
+      .send(newUser)
+      .expect(400)
+      .expect('Content-Type', /application\/json/)
+
+    expect(response.body.error).toBe('User validation failed: username: Path `username` (`12`) is shorter than the minimum allowed length (3).')
+  })
+
+  test('creating a new user without a password retuns 400 error code', async() => {
+    const newUser = {
+      username: 'Testy4',
+      name: 'Testy McTestface'
+    }
+
+    const response = await api
+      .post('/api/users')
+      .send(newUser)
+      .expect(400)
+      .expect('Content-Type', /application\/json/)
+
+    expect(response.body.error).toBe('You must provide a password to create a new user')
+  })
+
+  test('creating a new user without a username retuns 400 error code', async() => {
+    const newUser = {
+      name: 'Testy McTestface',
+      password: 'supersecurepassword'
+    }
+
+    const response = await api
+      .post('/api/users')
+      .send(newUser)
+      .expect(400)
+      .expect('Content-Type', /application\/json/)
+
+    expect(response.body.error).toBe('User validation failed: username: Path `username` is required.')
+  })
+
 })
 
 afterAll(async () => {
