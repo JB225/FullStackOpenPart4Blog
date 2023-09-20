@@ -8,8 +8,11 @@ const MONGODB_URI = process.env.NODE_ENV === 'test'
 
 const TEST_MODE = process.env.NODE_ENV === 'test'
 
+const SECRET = process.env.SECRET
+
 module.exports = {
   MONGODB_URI,
   PORT,
-  TEST_MODE
+  TEST_MODE,
+  SECRET
 }
