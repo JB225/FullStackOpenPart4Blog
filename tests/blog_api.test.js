@@ -38,6 +38,30 @@ describe('test methods related to blogs', () => {
   })
 
   describe('add new blogs to the database', () => {
+    let TOKEN
+
+    beforeEach(async() => {
+
+      const newUser = {
+        username: 'Testy',
+        name: 'Testy McTestface',
+        password: 'supersecurepassword'
+      }
+
+      await api
+        .post('/api/users')
+        .send(newUser)
+
+      const result = await api
+        .post('/api/login')
+        .send({
+          'username' : newUser.username,
+          'password' : newUser.password
+        })
+
+      TOKEN = result.body.token
+    })
+
     test('a valid blog can be added', async() => {
       const newBlog = {
         title: 'Test 3',
@@ -48,6 +72,7 @@ describe('test methods related to blogs', () => {
 
       await api
         .post('/api/blogs')
+        .set('Authorization', `Bearer ${TOKEN}`)
         .send(newBlog)
         .expect(201)
         .expect('Content-Type', /application\/json/)
@@ -59,7 +84,7 @@ describe('test methods related to blogs', () => {
       expect(titles).toContain('Test 3')
     })
 
-    test('a note created with out the likes property defaults to having zero likes', async() => {
+    test('a blog created with out the likes property defaults to having zero likes', async() => {
       const newBlog = {
         title: 'Test 3',
         author: 'Test Author 3',
@@ -69,6 +94,7 @@ describe('test methods related to blogs', () => {
       await api
         .post('/api/blogs')
         .send(newBlog)
+        .set('Authorization', `Bearer ${TOKEN}`)
         .expect(201)
         .expect('Content-Type', /application\/json/)
 
@@ -77,7 +103,7 @@ describe('test methods related to blogs', () => {
       expect(blogWithoutLikes[0].likes).toBe(0)
     })
 
-    test('a note created without a title returns status code 400 bad request', async() => {
+    test('a blog created without a title returns status code 400 bad request', async() => {
       const newBlog = {
         author: 'Test Author 3',
         url: 'wwww.testblog3.com',
@@ -86,11 +112,26 @@ describe('test methods related to blogs', () => {
 
       await api
         .post('/api/blogs')
+        .set('Authorization', `Bearer ${TOKEN}`)
         .send(newBlog)
         .expect(400)
     })
 
-    test('a note created without a url returns status code 400 bad request', async() => {
+    test('a blog created without a url returns status code 400 bad request', async() => {
+      const newBlog = {
+        title: 'Test 3',
+        author: 'Test Author 3',
+        likes: 10
+      }
+
+      await api
+        .post('/api/blogs')
+        .set('Authorization', `Bearer ${TOKEN}`)
+        .send(newBlog)
+        .expect(400)
+    })
+
+    test('a blog created without the authorization header returns status code 401 unauthorized', async() => {
       const newBlog = {
         title: 'Test 3',
         author: 'Test Author 3',
@@ -100,25 +141,63 @@ describe('test methods related to blogs', () => {
       await api
         .post('/api/blogs')
         .send(newBlog)
-        .expect(400)
+        .expect(401)
     })
   })
 
   describe('deleting blogs', () => {
+    let TOKEN
+
+    beforeEach(async() => {
+      await Blog.deleteMany({})
+      await User.deleteMany({})
+
+      const newUser = {
+        username: 'Testy2',
+        name: 'Testy McTestface',
+        password: 'supersecurepassword'
+      }
+
+      const userResult = await api
+        .post('/api/users')
+        .send(newUser)
+
+      const result = await api
+        .post('/api/login')
+        .send({
+          'username' : newUser.username,
+          'password' : newUser.password
+        })
+
+      const blogObject = new Blog(  {
+        title: 'Test 3',
+        author: 'McTestface',
+        url: 'wwww.testblog1.com',
+        likes: 10,
+        user: userResult.body.id
+      })
+
+      await blogObject.save()
+
+      TOKEN = result.body.token
+    })
+
     test('a valid blog can be deleted', async () => {
       const blogsAtStart = await helper.blogsInDb()
 
       await api
         .delete(`/api/blogs/${blogsAtStart[0].id}`)
+        .set('Authorization', `Bearer ${TOKEN}`)
         .expect(204)
 
       const blogsAtEnd = await helper.blogsInDb()
-      expect(blogsAtEnd).toHaveLength(helper.initialBlogs.length - 1)
+      expect(blogsAtEnd).toHaveLength(blogsAtStart.length - 1)
     })
 
     test('passing an id not associated with a blog in the database causes a 400 error', async () => {
       await api
         .delete('/api/blogs/5')
+        .set('Authorization', `Bearer ${TOKEN}`)
         .expect(400)
     })
   })
@@ -152,7 +231,7 @@ describe('test methods related to blogs', () => {
       }
 
       await api
-        .delete('/api/blogs/5')
+        .put('/api/blogs/5')
         .send(updatedBlog)
         .expect(400)
     })

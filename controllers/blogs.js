@@ -1,6 +1,5 @@
 const blogsRouter = require('express').Router()
 const Blog = require('../models/blog')
-const User = require('../models/user')
 const jwt = require('jsonwebtoken')
 const config = require('../utils/config')
 
@@ -17,7 +16,7 @@ blogsRouter.post('', async (request, response) => {
   if (!decodedToken.id) {
     return response.status(401).json({ error: 'token invalid' })
   }
-  const user = await User.findById(decodedToken.id)
+  const user = request.user
 
   if (!body.title || !body.url) {
     response.status(400).end()
@@ -34,9 +33,21 @@ blogsRouter.post('', async (request, response) => {
 
 // Delete blog
 blogsRouter.delete('/:id', async (request, response) => {
+  const decodedToken = jwt.verify(request.token, config.SECRET)
+  if (!decodedToken.id) {
+    return response.status(401).json({ error: 'token invalid' })
+  }
+
   try {
-    await Blog.findByIdAndRemove(request.params.id)
-    response.status(204).end()
+    const blog = await Blog.findById(request.params.id)
+    const userid = request.user.id
+
+    if (blog.user.toString() === userid.toString()) {
+      await Blog.findByIdAndRemove(request.params.id)
+      response.status(204).end()
+    } else {
+      response.status(400).json({ error:'You do not have permission to delete that blog' })
+    }
   } catch (error) {
     response.status(400).end()
   }
@@ -44,11 +55,15 @@ blogsRouter.delete('/:id', async (request, response) => {
 
 // Update existing blog
 blogsRouter.put('/:id', async (request, response) => {
-  const { title, author, url, likes } = request.body
-  const updated = await Blog.findByIdAndUpdate(request.params.id, { title, author, url, likes })
-  if (updated) {
-    response.status(204).end()
-  } else {
+  try {
+    const { title, author, url, likes } = request.body
+    const updated = await Blog.findByIdAndUpdate(request.params.id, { title, author, url, likes })
+    if (updated) {
+      response.status(204).end()
+    } else {
+      response.status(400).end()
+    }
+  } catch (error) {
     response.status(400).end()
   }
 })
