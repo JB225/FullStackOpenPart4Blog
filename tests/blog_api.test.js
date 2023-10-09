@@ -215,7 +215,7 @@ describe('test methods related to blogs', () => {
       await api
         .put(`/api/blogs/${blogsAtStart.filter(blog => {return blog.title === 'Test 2'})[0].id}`)
         .send(updatedBlog)
-        .expect(204)
+        .expect(201)
 
       const blogsAtEnd = await helper.blogsInDb()
       const blogWithUpdatedLikes =  blogsAtEnd.filter(blog => {return blog.title === 'Test 2'})
