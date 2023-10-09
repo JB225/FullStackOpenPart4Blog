@@ -47,7 +47,6 @@ blogsRouter.delete('/:id', async (request, response) => {
       await Blog.findByIdAndRemove(request.params.id)
       response.status(204).end()
     } else {
-      console.log('WORKING')
       response.status(400).json({ error:'You do not have permission to delete that blog' })
     }
   } catch (error) {
